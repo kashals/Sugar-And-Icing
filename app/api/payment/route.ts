@@ -34,6 +34,13 @@ export async function POST(req: Request) {
     // initialize server client
     const supabase = await createClient();
 
+    // --- SECURITY FIX: Verify Identity ---
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) {
+      return NextResponse.json({ error: "Unauthorized: Identity mismatch" }, { status: 401 });
+    }
+    // -------------------------------------
+
     // --- FIX 1: Validate orderId is not the string "undefined" ---
     const isValidOrderId = orderId && orderId !== 'undefined' && orderId !== 'null';
 
