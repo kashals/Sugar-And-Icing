@@ -1,0 +1,4 @@
+## 2024-05-18 - [Fix Authorization Bypass in Payment API]
+**Vulnerability:** The `/api/payment` route lacked an explicit server-side check to ensure the `userId` provided in the request body matched the authenticated user's session.
+**Learning:** Even though the client creates `createClient()` using the authenticated user's session and sends requests that are somewhat protected by Row Level Security (RLS) on insertion (if properly configured), relying solely on RLS when we can explicitly verify identity at the API level leaves the application vulnerable to authorization bypass. An attacker could potentially pass a different user's ID to generate payment intents or alter order creation logic.
+**Prevention:** Always extract and verify the `userId` server-side from `supabase.auth.getUser()` rather than trusting client-supplied IDs in the payload, especially on sensitive routes handling payments.
