@@ -19,7 +19,14 @@ export async function POST(req: Request) {
         }
 
         if (intent.status === 'succeeded') {
-            const derivedOrderId = intent.metadata.order_id || orderId;
+            const intentOrderId = intent.metadata.order_id;
+
+            // --- SECURITY FIX: Validate intent matches order ---
+            if (!intentOrderId || intentOrderId !== orderId) {
+                console.error("Security Alert: Payment Intent metadata does not match requested Order ID");
+                return NextResponse.json({ error: "Payment verification failed: Order mismatch" }, { status: 403 });
+            }
+
             const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
             const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -38,7 +45,7 @@ export async function POST(req: Request) {
                     status: 'paid',
                     receipt_url: (intent as any).charges?.data[0]?.receipt_url || null
                 })
-                .eq('id', derivedOrderId);
+                .eq('id', intentOrderId);
 
             if (error) throw error;
 
