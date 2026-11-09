@@ -21,20 +21,22 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-        const { userId, confirmText } = await request.json();
+        const { confirmText } = await request.json();
 
         // --- SECURITY FIX: Verify Identity ---
         const authClient = await createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
         const authHeader = request.headers.get('Authorization');
 
+        let userId: string;
         if (authHeader) {
             // If we have a token, verify it matches
             const token = authHeader.replace('Bearer ', '');
             const { data: { user }, error: userError } = await authClient.auth.getUser(token);
 
-            if (userError || !user || user.id !== userId) {
+            if (userError || !user) {
                 return NextResponse.json({ error: 'Unauthorized: Identity mismatch' }, { status: 401 });
             }
+            userId = user.id;
         } else {
             // If no token (unlikely for a delete request from frontend), fail
             return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
